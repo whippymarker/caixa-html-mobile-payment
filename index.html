@@ -260,7 +260,8 @@
 
             if (currentState === 'register') {
                 registerScreen.style.display = 'flex';
-                codeInput.focus(); // Foca no campo de código
+                // *** CORREÇÃO 1: GARANTE O FOCO NO INPUT DE CÓDIGO ***
+                codeInput.focus(); 
             } else if (currentState === 'payment') {
                 paymentScreen.style.display = 'flex';
             } 
@@ -283,7 +284,7 @@
             localStorage.setItem('savedItems', JSON.stringify(itemsList));
         }
 
-        // Função para CARREGAR o estado da transação (CORRIGIDA)
+        // Função para CARREGAR o estado da transação
         function loadTransactionState() {
             const savedTotal = localStorage.getItem('savedTotal');
             const savedItemsJSON = localStorage.getItem('savedItems');
@@ -292,7 +293,6 @@
                 currentTotal = parseFloat(savedTotal);
                 itemsList = JSON.parse(savedItemsJSON);
                 
-                // Força o estado lógico e visual de volta para o registro
                 currentState = 'register'; 
                 updateScreen(); 
 
@@ -346,7 +346,7 @@
             }
         }
         
-        // Limpa o estado (CORRIGIDA para forçar o redesenho da tela)
+        // Limpa o estado 
         function resetTransaction() {
             currentTotal = 0.00;
             itemsList = [];
@@ -366,15 +366,19 @@
             imagePlaceholder.style.display = 'block';
 
             renderItemsList();
+            
+            // *** CORREÇÃO 2: GARANTE O FOCO APÓS O RESET (para Enter) ***
+            codeInput.focus(); 
         }
 
         // --- INICIALIZAÇÃO E LISTENERS DE EVENTOS ---
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             
-            // Verifica se veio da tela de QR Code com status de reset (pagamento concluído)
+            // Verifica se veio da tela de pagamento com status de reset (pagamento concluído)
             if (urlParams.get('reset') === 'true') {
                 resetTransaction();
+                // Importante: A execução para aqui. O foco já foi garantido pelo resetTransaction.
                 return; 
             }
 
@@ -389,6 +393,7 @@
             codeInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     const code = codeInput.value.trim();
+                    // Garante que só adiciona se estiver na tela de registro
                     if (currentState === 'register' && code) {
                         addItem(code); 
                     }
@@ -411,6 +416,9 @@
                     window.location.href = 'tabela.html'; // Redireciona para o subsite
                 }
             });
+            
+            // Força o foco inicial no input (útil se não houver reset)
+            codeInput.focus();
         });
 
     </script>
