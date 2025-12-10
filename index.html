@@ -329,7 +329,7 @@
             updateScreen();
         }
 
-       // FUNÇÃO DE PAGAMENTO (AGORA REDIRECIONANDO PARA O FLUXO DE TROCO)
+       // FUNÇÃO DE PAGAMENTO (REDIRECIONAMENTO PARA TROCO)
         window.selectPayment = function(method) {
             if (currentTotal <= 0) {
                  alert('Nenhum valor para pagar.');
@@ -375,12 +375,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             
-            // Verifica se veio de uma tela de pagamento com status de reset (CORREÇÃO DO BUG DE FUNCIONALIDADE)
+            // Verifica se veio de uma tela de pagamento com status de reset (CORREÇÃO DO BUG DE URL)
             if (urlParams.get('reset') === 'true') {
                 resetTransaction();
                 
-                // CORREÇÃO CRUCIAL: Remove o parâmetro 'reset=true' da URL sem recarregar
-                window.history.replaceState(null, null, window.location.pathname);
+                // CORREÇÃO CRUCIAL: Remove o parâmetro 'reset=true' e o '/index.html' do caminho
+                window.history.replaceState(null, null, '/');
                 
                 codeInput.focus();
                 
