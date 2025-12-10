@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processando Pagamento</title>
+    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #34495e;
+            color: #ecf0f1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+        #qrcode {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+        }
+        h1 { color: #f1c40f; }
+        p { font-size: 1.2em; }
+        .cancel-button {
+            padding: 10px 20px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Aguardando Pagamento...</h1>
+    <p id="total-text">Valor: R$ 0,00</p>
+    <div id="qrcode"></div>
+    <p>Use seu celular para escanear.</p>
+    <button class="cancel-button" onclick="cancelPayment()">Cancelar</button>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const total = urlParams.get('total');
+        const transactionID = 'TRX-' + Math.random().toString(36).substring(2, 9); // ID único
+
+        document.getElementById('total-text').textContent = `Valor: R$ ${parseFloat(total).toFixed(2).replace('.', ',')}`;
+
+        // O celular irá acessar a tela de pagamento NO SEU DOMÍNIO PÚBLICO
+        // O hash (#) é crucial, pois permite armazenar dados na URL sem recarregar a página
+        const paymentUrl = `${window.location.origin}/mobile_payment.html?total=${total}&id=${transactionID}`;
+        
+        // Salva o ID da transação no PC para monitoramento
+        localStorage.setItem('activeTransactionID', transactionID);
+
+        // Gera o QR Code
+        new QRCode(document.getElementById("qrcode"), {
+            text: paymentUrl,
+            width: 256,
+            height: 256,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+
+        function cancelPayment() {
+            // Limpa o ID da transação ativa e volta
+            localStorage.removeItem('activeTransactionID'); 
+            window.location.href = 'caixa.html'; 
+        }
+
+        // Monitora a resposta do celular (salva no localStorage)
+        function checkPaymentStatus() {
+            const activeID = localStorage.getItem('activeTransactionID');
+            const statusJSON = localStorage.getItem('paymentStatus_' + activeID);
+
+            if (statusJSON) {
+                const statusData = JSON.parse(statusJSON);
+                
+                // Limpa o status no localStorage após ler
+                localStorage.removeItem('paymentStatus_' + activeID);
+                localStorage.removeItem('activeTransactionID'); 
+                clearInterval(checkInterval); // Para de monitorar
+                
+                if (statusData.status === 'success') {
+                    alert('Pagamento APROVADO! Finalizando transação.');
+                    window.location.href = 'caixa.html?reset=true'; 
+                } else if (statusData.status === 'failed') {
+                    alert('Pagamento RECUSADO. Tente novamente.');
+                    window.location.href = 'caixa.html'; 
+                }
+            }
+        }
+
+        const checkInterval = setInterval(checkPaymentStatus, 2000); 
+    </script>
+</body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador OS de Caixa</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .os-container {
+            width: 800px;
+            height: 600px;
+            background-color: #34495e;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .screen {
+            display: none;
+            flex-grow: 1;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        /* ESTADO: REGISTRO DE PRODUTOS */
+        #register-screen {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .product-area {
+            display: flex;
+            gap: 20px;
+            height: 200px;
+            background-color: #2c3e50;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .image-display {
+            width: 40%;
+            background-color: #bdc3c7;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+            font-size: 14px;
+            overflow: hidden;
+        }
+        .image-display img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .price-display {
+            width: 60%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            text-align: right;
+        }
+
+        .price-label {
+            font-size: 18px;
+            color: #95a5a6;
+        }
+
+        #current-price {
+            font-size: 48px;
+            font-weight: bold;
+            color: #2ecc71;
+        }
+
+        .scan-area {
+            background-color: #2c3e50;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        #product-code-input {
+            width: 100%;
+            padding: 10px;
+            font-size: 24px;
+            text-align: center;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            box-sizing: border-box;
+            background-color: #ecf0f1;
+            color: #333;
+        }
+
+        .total-area {
+            background-color: #2c3e50;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: right;
+            border-top: 1px solid #3498db;
+        }
+
+        #total-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #f1c40f;
+        }
+        
+        .product-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            border: 1px solid #3498db;
+            padding: 5px;
+            background-color: #2c3e50;
+        }
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dotted #7f8c8d;
+        }
+        
+        /* ESTADO: PAGAMENTO */
+        #payment-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: #2c3e50;
+        }
+
+        #payment-screen h2 {
+            margin-bottom: 30px;
+            color: #3498db;
+        }
+
+        .payment-options button {
+            padding: 15px 30px;
+            font-size: 24px;
+            margin: 0 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .payment-options button:hover {
+            opacity: 0.9;
+        }
+
+        #cash-button {
+            background-color: #2ecc71;
+            color: #fff;
+        }
+
+        #card-button {
+            background-color: #e74c3c;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="os-container">
+        <div id="register-screen" class="screen" style="display: flex;">
+            <div class="product-area">
+                <div class="image-display">
+                    <img id="product-image" src="" alt="Imagem do Produto" style="display: none;">
+                    <span id="image-placeholder">Nenhum Produto</span>
+                </div>
+                <div class="price-display">
+                    <span class="price-label">Preço Unitário:</span>
+                    <span id="current-price">R$ 0,00</span>
+                </div>
+            </div>
+
+            <div class="product-list" id="product-list">
+                </div>
+
+            <div class="total-area">
+                <span class="price-label">TOTAL:</span>
+                <span id="total-value">R$ 0,00</span>
+            </div>
+            
+            <div class="scan-area">
+                <input type="text" id="product-code-input" placeholder="Digite o Código e tecle Enter">
+                <p class="action-message">Tecle **ALT** para Pagamento | Tecle **L** para Tabela de Produtos</p>
+            </div>
+        </div>
+
+        <div id="payment-screen" class="screen">
+            <h2>Modo de Pagamento</h2>
+            <div class="payment-options">
+                <button id="cash-button" onclick="selectPayment('cash')">DINHEIRO</button>
+                <button id="card-button" onclick="selectPayment('card')">CARTÃO / QR CODE</button>
+            </div>
+            <p class="action-message">Selecione o método de pagamento</p>
+        </div>
+
+        <div id="card-details-screen" class="screen" style="display: none;"></div>
+
+    </div>
+
+    <script>
+        // --- BASE DE DADOS SIMULADA ---
+        const initialProducts = {
+            '1001': { name: 'Refrigerante Cola 2L', price: 8.50, image: './images/refri.png' },
+            '1002': { name: 'Pacote de Arroz 5kg', price: 25.99, image: './images/arroz.png' },
+            '1003': { name: 'Pão de Forma', price: 6.25, image: './images/pao.png' },
+            '1004': { name: 'Chupeta', price: 9.99, image: './images/chupeta.png' },
+            '1005': { name: 'Cubo Mágico', price: 24.99, image: './images/cubo-magico.png' },
+            '1006': { name: 'Fone de Ouvido', price: 80.50, image: './images/fone.png' },
+            '1007': { name: 'Mamadeira', price: 5.50, image: './images/mamadeira.png' },
+            '1008': { name: 'Pizza', price: 7.50, image: './images/pizza.png' },
+            '1009': { name: 'Stitch', price: 50.00, image: './images/stitch.png' },
+            '1010': { name: 'Urso', price: 12.00, image: './images/urso.png' },
+            '9999': { name: 'Item de Teste', price: 0.01, image: 'https://via.placeholder.com/200x200/2ecc71/ffffff?text=TESTE' }
+        };
+
+        // Salva o banco de dados de produtos para acesso da tabela.html
+        localStorage.setItem('productsDatabase', JSON.stringify(initialProducts));
+        const products = initialProducts; 
+
+        // --- VARIÁVEIS DE ESTADO ---
+        let currentTotal = 0.00;
+        let currentState = 'register'; 
+        let itemsList = []; 
+
+        // --- ELEMENTOS DOM ---
+        const registerScreen = document.getElementById('register-screen');
+        const paymentScreen = document.getElementById('payment-screen');
+        const codeInput = document.getElementById('product-code-input');
+        const currentPriceDisplay = document.getElementById('current-price');
+        const totalValueDisplay = document.getElementById('total-value');
+        const productListDisplay = document.getElementById('product-list');
+        const productImage = document.getElementById('product-image');
+        const imagePlaceholder = document.getElementById('image-placeholder');
+
+
+        // --- FUNÇÕES DE LÓGICA ---
+
+        const formatCurrency = (value) => `R$ ${value.toFixed(2).replace('.', ',')}`;
+
+        function updateScreen() {
+            registerScreen.style.display = 'none';
+            paymentScreen.style.display = 'none';
+
+            if (currentState === 'register') {
+                registerScreen.style.display = 'flex';
+                codeInput.focus();
+            } else if (currentState === 'payment') {
+                paymentScreen.style.display = 'flex';
+            } 
+        }
+
+        function renderItemsList() {
+            productListDisplay.innerHTML = '';
+            itemsList.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('product-item');
+                itemDiv.innerHTML = `<span>${item.name}</span><span>${formatCurrency(item.price)}</span>`;
+                productListDisplay.appendChild(itemDiv);
+            });
+            totalValueDisplay.textContent = formatCurrency(currentTotal);
+        }
+        
+        // Função para SALVAR o estado da transação
+        function saveTransactionState() {
+            localStorage.setItem('savedTotal', currentTotal);
+            localStorage.setItem('savedItems', JSON.stringify(itemsList));
+        }
+
+        // Função para CARREGAR o estado da transação (Corrigido para evitar o bug visual)
+        function loadTransactionState() {
+            const savedTotal = localStorage.getItem('savedTotal');
+            const savedItemsJSON = localStorage.getItem('savedItems');
+            
+            if (savedTotal && savedItemsJSON) {
+                currentTotal = parseFloat(savedTotal);
+                itemsList = JSON.parse(savedItemsJSON);
+                renderItemsList(); 
+                
+                // Força o estado visual de volta para o registro
+                currentState = 'register'; 
+                updateScreen(); 
+            }
+        }
+
+        function addItem(code) {
+            const product = products[code];
+            if (product) {
+                currentPriceDisplay.textContent = formatCurrency(product.price);
+                productImage.src = product.image;
+                productImage.style.display = 'block';
+                imagePlaceholder.style.display = 'none';
+                
+                currentTotal += product.price;
+                itemsList.push({ name: product.name, price: product.price }); 
+
+                renderItemsList(); 
+                codeInput.value = '';
+                saveTransactionState(); // Salva o novo estado
+            } else {
+                alert(`Produto com código ${code} não encontrado!`);
+                codeInput.value = '';
+            }
+        }
+
+        function goToPayment() {
+            if (currentTotal <= 0) {
+                alert('Adicione pelo menos um produto para ir para o pagamento!');
+                return;
+            }
+            currentState = 'payment';
+            updateScreen();
+        }
+
+        // FUNÇÃO DE PAGAMENTO (Corrigida para fluxo QR Code)
+        window.selectPayment = function(method) {
+            if (currentTotal <= 0) {
+                 alert('Nenhum valor para pagar.');
+                 return;
+            }
+            if (method === 'cash') {
+                alert('Pagamento em Dinheiro Confirmado! Fechando pedido e dando troco.');
+                resetTransaction();
+            } else if (method === 'card') {
+                // Ao selecionar cartão, redireciona para a tela do QR Code
+                const total = currentTotal.toFixed(2);
+                window.location.href = `qr_display.html?total=${total}`;
+            }
+        }
+        
+        // Limpa o estado do LocalStorage ao resetar
+        function resetTransaction() {
+            currentTotal = 0.00;
+            itemsList = [];
+            
+            // Limpa o LocalStorage
+            localStorage.removeItem('savedTotal');
+            localStorage.removeItem('savedItems');
+            
+            // Atualiza o display
+            totalValueDisplay.textContent = formatCurrency(0.00);
+            currentPriceDisplay.textContent = formatCurrency(0.00);
+            productListDisplay.innerHTML = '';
+            productImage.style.display = 'none';
+            imagePlaceholder.style.display = 'block';
+            
+            currentState = 'register';
+            updateScreen();
+            codeInput.value = '';
+        }
+
+        // --- LISTENERS DE EVENTOS ---
+
+        // 1. Listener para adicionar item (Enter)
+        codeInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const code = codeInput.value.trim();
+                if (currentState === 'register' && code) {
+                    addItem(code); 
+                }
+            }
+        });
+
+        // 2. Listener para o Alt (transição para pagamento)
+        document.addEventListener('keydown', function(e) {
+            if (e.altKey && currentState === 'register') {
+                e.preventDefault(); 
+                goToPayment();
+            }
+        });
+
+        // 3. Listener para a tecla L (transição para a Tabela)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'l' && currentState === 'register') {
+                e.preventDefault(); 
+                saveTransactionState(); // Salva o estado ANTES de mudar a página
+                window.location.href = 'tabela.html'; // Redireciona para o subsite
+            }
+        });
+
+        // --- INICIALIZAÇÃO (Corrigida para resetar após pagamento) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Verifica se veio da tela de QR Code com status de reset (pagamento concluído)
+            if (urlParams.get('reset') === 'true') {
+                resetTransaction();
+                return; 
+            }
+
+            // Carrega o estado salvo
+            if (localStorage.getItem('savedTotal')) {
+                loadTransactionState(); 
+            } else {
+                resetTransaction(); 
+            }
+        });
+    </script>
+</body>
+</html>

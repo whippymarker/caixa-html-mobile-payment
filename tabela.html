@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabela de Produtos</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+        }
+        h1 {
+            color: #3498db;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #34495e;
+        }
+        th, td {
+            border: 1px solid #7f8c8d;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #2c3e50;
+            color: #f1c40f;
+        }
+        .back-message {
+            margin-top: 30px;
+            font-size: 1.1em;
+            color: #2ecc71;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Tabela de Códigos e Produtos</h1>
+    <p class="back-message">Tecle **ESC** para retornar ao caixa. (O estado da sua transação está salvo)</p>
+    
+    <table id="product-table">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Produto</th>
+                <th>Preço</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+
+    <script>
+        // Carrega o banco de dados de produtos salvo no localStorage pelo caixa.html
+        const productsJSON = localStorage.getItem('productsDatabase');
+        const products = productsJSON ? JSON.parse(productsJSON) : {};
+        
+        const tableBody = document.getElementById('product-table').querySelector('tbody');
+
+        for (const code in products) {
+            const product = products[code];
+            const row = tableBody.insertRow();
+            
+            // Coluna Código
+            let cell = row.insertCell();
+            cell.textContent = code;
+            
+            // Coluna Produto
+            cell = row.insertCell();
+            cell.textContent = product.name;
+            
+            // Coluna Preço
+            cell = row.insertCell();
+            cell.textContent = `R$ ${product.price.toFixed(2).replace('.', ',')}`;
+        }
+        
+        // Listener para voltar ao caixa (Arquivo principal)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                window.location.href = 'caixa.html'; // Volta para o arquivo principal
+            }
+        });
+    </script>
+</body>
+</html>
