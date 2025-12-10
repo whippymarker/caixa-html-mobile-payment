@@ -292,7 +292,7 @@
                 currentTotal = parseFloat(savedTotal);
                 itemsList = JSON.parse(savedItemsJSON);
                 
-                // NOVO: Força o estado lógico e visual de volta para o registro
+                // Força o estado lógico e visual de volta para o registro
                 currentState = 'register'; 
                 updateScreen(); 
 
@@ -335,9 +335,10 @@
                  alert('Nenhum valor para pagar.');
                  return;
             }
-            if (method === 'cash') {
-                alert('Pagamento em Dinheiro Confirmado! Fechando pedido e dando troco.');
-                resetTransaction(); // Chama a função corrigida
+           if (method === 'cash') {
+                // Redireciona para a nova tela de cálculo de troco
+                const total = currentTotal.toFixed(2);
+                window.location.href = `cash_payment.html?total=${total}`;
             } else if (method === 'card') {
                 // REDIRECIONAMENTO COMPLETO (necessário para o QR Code / WebSockets)
                 const total = currentTotal.toFixed(2);
@@ -355,7 +356,7 @@
             localStorage.removeItem('savedTotal');
             localStorage.removeItem('savedItems');
             
-            // NOVO: Volta o estado lógico e visual para o registro
+            // Volta o estado lógico e visual para o registro
             currentState = 'register'; 
             updateScreen();           
             
@@ -367,7 +368,7 @@
             renderItemsList();
         }
 
-        // --- INICIALIZAÇÃO ---
+        // --- INICIALIZAÇÃO E LISTENERS DE EVENTOS ---
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             
@@ -383,35 +384,33 @@
             } else {
                 resetTransaction(); 
             }
-        });
-
-        // --- LISTENERS DE EVENTOS ---
-
-        // 1. Listener para adicionar item (Enter)
-        codeInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                const code = codeInput.value.trim();
-                if (currentState === 'register' && code) {
-                    addItem(code); 
+            
+            // 1. Listener para adicionar item (Enter)
+            codeInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const code = codeInput.value.trim();
+                    if (currentState === 'register' && code) {
+                        addItem(code); 
+                    }
                 }
-            }
-        });
+            });
 
-        // 2. Listener para o Alt (transição para pagamento)
-        document.addEventListener('keydown', function(e) {
-            if (e.altKey && currentState === 'register') {
-                e.preventDefault(); 
-                goToPayment();
-            }
-        });
+            // 2. Listener para o Alt (transição para pagamento)
+            document.addEventListener('keydown', function(e) {
+                if (e.altKey && currentState === 'register') {
+                    e.preventDefault(); 
+                    goToPayment();
+                }
+            });
 
-        // 3. Listener para a tecla L (transição para a Tabela)
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'l' && currentState === 'register') {
-                e.preventDefault(); 
-                saveTransactionState(); // Salva o estado ANTES de mudar a página
-                window.location.href = 'tabela.html'; // Redireciona para o subsite
-            }
+            // 3. Listener para a tecla L (transição para a Tabela)
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'l' && currentState === 'register') {
+                    e.preventDefault(); 
+                    saveTransactionState(); // Salva o estado ANTES de mudar a página
+                    window.location.href = 'tabela.html'; // Redireciona para o subsite
+                }
+            });
         });
 
     </script>
