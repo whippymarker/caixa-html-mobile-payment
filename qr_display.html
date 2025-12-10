@@ -70,7 +70,7 @@
         function cancelPayment() {
             // Limpa o ID da transação ativa e volta
             localStorage.removeItem('activeTransactionID'); 
-            window.location.href = 'caixa.html'; 
+            window.location.href = 'index.html'; 
         }
 
         // Monitora a resposta do celular (salva no localStorage)
@@ -88,10 +88,10 @@
                 
                 if (statusData.status === 'success') {
                     alert('Pagamento APROVADO! Finalizando transação.');
-                    window.location.href = 'caixa.html?reset=true'; 
+                    window.location.href = 'index.html?reset=true'; 
                 } else if (statusData.status === 'failed') {
                     alert('Pagamento RECUSADO. Tente novamente.');
-                    window.location.href = 'caixa.html'; 
+                    window.location.href = 'index.html'; 
                 }
             }
         }
