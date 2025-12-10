@@ -46,17 +46,15 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const total = urlParams.get('total');
-        // Gera um ID de transação único
         const transactionID = 'TRX-' + Math.random().toString(36).substring(2, 9); 
 
         document.getElementById('total-text').textContent = `Valor: R$ ${parseFloat(total).toFixed(2).replace('.', ',')}`;
 
-        // GARANTIA DE HTTPS E HOST ROOT
-        // Usa 'host' em vez de 'origin' para lidar com variações de porta ou subdomínio (embora Render resolva isso)
+        // GARANTIA DE HTTPS E HOST ROOT para máxima compatibilidade no Render
         const paymentUrl = `https://${window.location.host}/mobile_payment.html?total=${total}&id=${transactionID}`;
         
-        // Salva o ID da transação no PC para monitoramento
-        localStorage.setItem('activeTransactionID', transactionID);
+        // Salva o ID da transação no PC usando sessionStorage
+        sessionStorage.setItem('activeTransactionID', transactionID);
 
         // Gera o QR Code
         new QRCode(document.getElementById("qrcode"), {
@@ -69,29 +67,23 @@
         });
 
         function cancelPayment() {
-            localStorage.removeItem('activeTransactionID'); 
-            window.location.href = 'index.html'; // Assume que caixa.html foi renomeado para index.html
+            sessionStorage.removeItem('activeTransactionID'); 
+            window.location.href = 'index.html'; 
         }
 
         // Função de monitoramento
         function checkPaymentStatus() {
-            const activeID = localStorage.getItem('activeTransactionID');
+            const activeID = sessionStorage.getItem('activeTransactionID');
             // CHAVE EXPLICITA que o celular deve escrever
             const storageKey = 'paymentStatus_' + activeID; 
-            const statusJSON = localStorage.getItem(storageKey);
+            const statusJSON = sessionStorage.getItem(storageKey);
 
-            // --- LOGGING PARA DIAGNÓSTICO ---
-            if (activeID) {
-                console.log(`[Monitor] Checando chave: ${storageKey}. Status encontrado: ${statusJSON ? 'SIM' : 'NÃO'}`);
-            }
-            // -------------------------------
-            
             if (statusJSON) {
                 const statusData = JSON.parse(statusJSON);
                 
-                // Limpa as chaves para evitar duplicação em futuras transações
-                localStorage.removeItem(storageKey);
-                localStorage.removeItem('activeTransactionID'); 
+                // Limpa as chaves para evitar duplicação
+                sessionStorage.removeItem(storageKey);
+                sessionStorage.removeItem('activeTransactionID'); 
                 clearInterval(checkInterval); 
                 
                 if (statusData.status === 'success') {
@@ -104,7 +96,7 @@
             }
         }
 
-        // Aumenta o intervalo para 4 segundos e tenta por mais tempo
+        // Monitora a cada 4 segundos
         const checkInterval = setInterval(checkPaymentStatus, 4000); 
     </script>
 </body>

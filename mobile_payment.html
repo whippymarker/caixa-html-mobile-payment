@@ -41,26 +41,25 @@
     <button id="decline" onclick="sendResponse('failed')">RECUSAR</button>
 
     <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const total = urlParams.get('total');
-    const transactionID = urlParams.get('id'); // Recebe o ID único da URL do Render
+        const urlParams = new URLSearchParams(window.location.search);
+        const total = urlParams.get('total');
+        const transactionID = urlParams.get('id'); // Recebe o ID único
 
-    document.getElementById('mobile-total').textContent = `R$ ${parseFloat(total).toFixed(2).replace('.', ',')}`;
+        document.getElementById('mobile-total').textContent = `R$ ${parseFloat(total).toFixed(2).replace('.', ',')}`;
 
-    function sendResponse(status) {
-        // A chave de armazenamento é baseada no ID recebido da URL do Render
-        const storageKey = 'paymentStatus_' + transactionID;
-        
-        // O celular salva o status no localStorage do domínio do Render
-        localStorage.setItem(storageKey, JSON.stringify({
-            status: status,
-            timestamp: new Date().getTime()
-        }));
-        
-        alert(`Pagamento ${status.toUpperCase()}! Fechando terminal.`);
-        // Esta linha é crucial: o celular apenas se fecha, não tenta se comunicar via IP.
-        window.close(); 
-    }
-</script>
+        function sendResponse(status) {
+            // Usa o ID da transação como parte da chave de armazenamento
+            const storageKey = 'paymentStatus_' + transactionID;
+            
+            // Salva o status de pagamento usando sessionStorage
+            sessionStorage.setItem(storageKey, JSON.stringify({
+                status: status,
+                timestamp: new Date().getTime()
+            }));
+            
+            alert(`Pagamento ${status.toUpperCase()}! Fechando terminal.`);
+            window.close();
+        }
+    </script>
 </body>
 </html>

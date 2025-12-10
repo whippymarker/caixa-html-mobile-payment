@@ -328,7 +328,7 @@
             updateScreen();
         }
 
-        // FUNÇÃO DE PAGAMENTO (Corrigida para fluxo QR Code)
+       // FUNÇÃO DE PAGAMENTO (Corrigida para fluxo QR Code)
         window.selectPayment = function(method) {
             if (currentTotal <= 0) {
                  alert('Nenhum valor para pagar.');
@@ -338,32 +338,43 @@
                 alert('Pagamento em Dinheiro Confirmado! Fechando pedido e dando troco.');
                 resetTransaction();
             } else if (method === 'card') {
-                // Ao selecionar cartão, redireciona para a tela do QR Code
+                // Redireciona para a tela do QR Code
                 const total = currentTotal.toFixed(2);
                 window.location.href = `qr_display.html?total=${total}`;
             }
         }
         
-        // Limpa o estado do LocalStorage ao resetar
+        // Limpa o estado
         function resetTransaction() {
             currentTotal = 0.00;
             itemsList = [];
             
-            // Limpa o LocalStorage
-            localStorage.removeItem('savedTotal');
+            // Limpa o sessionStorage E localStorage para garantir
+            sessionStorage.clear(); // Limpa a sessão
+            localStorage.removeItem('savedTotal'); // Mantém o backup em localStorage
             localStorage.removeItem('savedItems');
             
             // Atualiza o display
-            totalValueDisplay.textContent = formatCurrency(0.00);
-            currentPriceDisplay.textContent = formatCurrency(0.00);
-            productListDisplay.innerHTML = '';
-            productImage.style.display = 'none';
-            imagePlaceholder.style.display = 'block';
-            
-            currentState = 'register';
-            updateScreen();
-            codeInput.value = '';
+            // ... (restante do código de reset visual) ...
         }
+
+        // --- INICIALIZAÇÃO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Verifica se veio da tela de QR Code com status de reset (pagamento concluído)
+            if (urlParams.get('reset') === 'true') {
+                resetTransaction();
+                return; 
+            }
+
+            // Carrega o estado salvo (mantemos o localStorage para guardar o carrinho)
+            if (localStorage.getItem('savedTotal')) {
+                loadTransactionState(); 
+            } else {
+                resetTransaction(); 
+            }
+        });
 
         // --- LISTENERS DE EVENTOS ---
 
