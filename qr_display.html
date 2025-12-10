@@ -43,29 +43,66 @@
     <p>Use seu celular para escanear.</p>
     <button class="cancel-button" onclick="cancelPayment()">Cancelar</button>
 
-<script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const total = urlParams.get('total');
-    // Gera um ID de transação único
-    const transactionID = 'TRX-' + Math.random().toString(36).substring(2, 9); 
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const total = urlParams.get('total');
+        // Gera um ID de transação único para evitar conflitos
+        const transactionID = 'TRX-' + Math.random().toString(36).substring(2, 9); 
 
-    document.getElementById('total-text').textContent = `Valor: R$ ${parseFloat(total).toFixed(2).replace('.', ',')}`;
+        document.getElementById('total-text').textContent = `Valor: R$ ${parseFloat(total).toFixed(2).replace('.', ',')}`;
 
-    // USE ESTA LINHA CORRETA para que o Render use seu domínio HTTPS:
-    const paymentUrl = `${window.location.origin}/mobile_payment.html?total=${total}&id=${transactionID}`;
-    
-    // Certifique-se de que NÃO HÁ NENHUMA linha definindo 'pcIP' ou 'SEU_IP_LOCAL_AQUI'
-    localStorage.setItem('activeTransactionID', transactionID);
+        // --- CORREÇÃO DE PROTOCOLO PARA RENDER (HTTPS) ---
+        // Garante que o domínio seja HTTPS para que o localStorage seja compartilhado
+        const correctOrigin = window.location.origin.replace('http:', 'https:'); 
+        
+        // Monta a URL que o QR Code irá conter
+        const paymentUrl = `${correctOrigin}/mobile_payment.html?total=${total}&id=${transactionID}`;
+        // ----------------------------------------------------
 
-    // Gera o QR Code (o restante do código continua o mesmo)
-    new QRCode(document.getElementById("qrcode"), {
-        text: paymentUrl,
-        width: 256,
-        height: 256,
-        colorDark : "#000000",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.H
-    });
-    // ...
-</script></body>
+        // Salva o ID da transação no PC para monitoramento
+        localStorage.setItem('activeTransactionID', transactionID);
+
+        // Gera o QR Code
+        new QRCode(document.getElementById("qrcode"), {
+            text: paymentUrl,
+            width: 256,
+            height: 256,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+
+        function cancelPayment() {
+            // Limpa o ID da transação ativa e volta
+            localStorage.removeItem('activeTransactionID'); 
+            window.location.href = 'caixa.html'; 
+        }
+
+        // Monitora a resposta do celular (salva no localStorage)
+        function checkPaymentStatus() {
+            const activeID = localStorage.getItem('activeTransactionID');
+            const statusJSON = localStorage.getItem('paymentStatus_' + activeID);
+
+            if (statusJSON) {
+                const statusData = JSON.parse(statusJSON);
+                
+                // Limpa o status no localStorage após ler
+                localStorage.removeItem('paymentStatus_' + activeID);
+                localStorage.removeItem('activeTransactionID'); 
+                clearInterval(checkInterval); // Para de monitorar
+                
+                if (statusData.status === 'success') {
+                    alert('Pagamento APROVADO! Finalizando transação.');
+                    window.location.href = 'caixa.html?reset=true'; 
+                } else if (statusData.status === 'failed') {
+                    alert('Pagamento RECUSADO. Tente novamente.');
+                    window.location.href = 'caixa.html'; 
+                }
+            }
+        }
+
+        // Tenta verificar o status a cada 3 segundos (aumento para estabilidade)
+        const checkInterval = setInterval(checkPaymentStatus, 3000); 
+    </script>
+</body>
 </html>
