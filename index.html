@@ -329,7 +329,7 @@
             updateScreen();
         }
 
-       // FUNÇÃO DE PAGAMENTO (REDIRECIONAMENTO PARA TROCO)
+       // FUNÇÃO DE PAGAMENTO (REDIRECIONAMENTO PARA TROCO / CARTÃO)
         window.selectPayment = function(method) {
             if (currentTotal <= 0) {
                  alert('Nenhum valor para pagar.');
@@ -379,10 +379,15 @@
             if (urlParams.get('reset') === 'true') {
                 resetTransaction();
                 
-                // CORREÇÃO CRUCIAL: Remove o parâmetro 'reset=true' e o '/index.html' do caminho
-                window.history.replaceState(null, null, '/');
-                
-                codeInput.focus();
+                // CORREÇÃO FINAL: Usa setTimeout para garantir que a manipulação da URL e o foco
+                // ocorram após o navegador terminar de processar o redirecionamento.
+                setTimeout(() => {
+                    // 1. Remove o parâmetro 'reset=true' e o '/index.html' da URL
+                    window.history.replaceState(null, null, '/');
+                    
+                    // 2. Garante o foco novamente
+                    codeInput.focus();
+                }, 50); // 50ms é geralmente suficiente para estabilizar
                 
                 return; 
             }
