@@ -260,7 +260,7 @@
 
             if (currentState === 'register') {
                 registerScreen.style.display = 'flex';
-                codeInput.focus();
+                codeInput.focus(); // Foca no campo de código
             } else if (currentState === 'payment') {
                 paymentScreen.style.display = 'flex';
             } 
@@ -283,7 +283,7 @@
             localStorage.setItem('savedItems', JSON.stringify(itemsList));
         }
 
-        // Função para CARREGAR o estado da transação (Corrigido para evitar o bug visual)
+        // Função para CARREGAR o estado da transação (CORRIGIDA)
         function loadTransactionState() {
             const savedTotal = localStorage.getItem('savedTotal');
             const savedItemsJSON = localStorage.getItem('savedItems');
@@ -291,11 +291,12 @@
             if (savedTotal && savedItemsJSON) {
                 currentTotal = parseFloat(savedTotal);
                 itemsList = JSON.parse(savedItemsJSON);
-                renderItemsList(); 
                 
-                // Força o estado visual de volta para o registro
+                // NOVO: Força o estado lógico e visual de volta para o registro
                 currentState = 'register'; 
                 updateScreen(); 
+
+                renderItemsList(); 
             }
         }
 
@@ -328,7 +329,7 @@
             updateScreen();
         }
 
-       // FUNÇÃO DE PAGAMENTO (Corrigida para fluxo QR Code)
+       // FUNÇÃO DE PAGAMENTO 
         window.selectPayment = function(method) {
             if (currentTotal <= 0) {
                  alert('Nenhum valor para pagar.');
@@ -336,26 +337,34 @@
             }
             if (method === 'cash') {
                 alert('Pagamento em Dinheiro Confirmado! Fechando pedido e dando troco.');
-                resetTransaction();
+                resetTransaction(); // Chama a função corrigida
             } else if (method === 'card') {
-                // Redireciona para a tela do QR Code
+                // REDIRECIONAMENTO COMPLETO (necessário para o QR Code / WebSockets)
                 const total = currentTotal.toFixed(2);
                 window.location.href = `qr_display.html?total=${total}`;
             }
         }
         
-        // Limpa o estado
+        // Limpa o estado (CORRIGIDA para forçar o redesenho da tela)
         function resetTransaction() {
             currentTotal = 0.00;
             itemsList = [];
             
-            // Limpa o sessionStorage E localStorage para garantir
-            sessionStorage.clear(); // Limpa a sessão
-            localStorage.removeItem('savedTotal'); // Mantém o backup em localStorage
+            // Limpa o sessionStorage E localStorage
+            sessionStorage.clear();
+            localStorage.removeItem('savedTotal');
             localStorage.removeItem('savedItems');
             
-            // Atualiza o display
-            // ... (restante do código de reset visual) ...
+            // NOVO: Volta o estado lógico e visual para o registro
+            currentState = 'register'; 
+            updateScreen();           
+            
+            // Zera os displays visuais
+            currentPriceDisplay.textContent = formatCurrency(0.00);
+            productImage.style.display = 'none';
+            imagePlaceholder.style.display = 'block';
+
+            renderItemsList();
         }
 
         // --- INICIALIZAÇÃO ---
@@ -368,7 +377,7 @@
                 return; 
             }
 
-            // Carrega o estado salvo (mantemos o localStorage para guardar o carrinho)
+            // Carrega o estado salvo ou reseta
             if (localStorage.getItem('savedTotal')) {
                 loadTransactionState(); 
             } else {
@@ -405,23 +414,6 @@
             }
         });
 
-        // --- INICIALIZAÇÃO (Corrigida para resetar após pagamento) ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            
-            // Verifica se veio da tela de QR Code com status de reset (pagamento concluído)
-            if (urlParams.get('reset') === 'true') {
-                resetTransaction();
-                return; 
-            }
-
-            // Carrega o estado salvo
-            if (localStorage.getItem('savedTotal')) {
-                loadTransactionState(); 
-            } else {
-                resetTransaction(); 
-            }
-        });
     </script>
 </body>
 </html>
