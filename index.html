@@ -171,49 +171,7 @@
             color: #fff;
         }
     </style>
-</head>
-<body>
-
-    <div class="os-container">
-        <div id="register-screen" class="screen" style="display: flex;">
-            <div class="product-area">
-                <div class="image-display">
-                    <img id="product-image" src="" alt="Imagem do Produto" style="display: none;">
-                    <span id="image-placeholder">Nenhum Produto</span>
-                </div>
-                <div class="price-display">
-                    <span class="price-label">Preço Unitário:</span>
-                    <span id="current-price">R$ 0,00</span>
-                </div>
-            </div>
-
-            <div class="product-list" id="product-list">
-                </div>
-
-            <div class="total-area">
-                <span class="price-label">TOTAL:</span>
-                <span id="total-value">R$ 0,00</span>
-            </div>
-            
-            <div class="scan-area">
-                <input type="text" id="product-code-input" placeholder="Digite o Código e tecle Enter">
-                <p class="action-message">Tecle **ALT** para Pagamento | Tecle **L** para Tabela de Produtos</p>
-            </div>
-        </div>
-
-        <div id="payment-screen" class="screen">
-            <h2>Modo de Pagamento</h2>
-            <div class="payment-options">
-                <button id="cash-button" onclick="selectPayment('cash')">DINHEIRO</button>
-                <button id="card-button" onclick="selectPayment('card')">CARTÃO / QR CODE</button>
-            </div>
-            <p class="action-message">Selecione o método de pagamento</p>
-        </div>
-
-        <div id="card-details-screen" class="screen" style="display: none;"></div>
-
-    </div>
-
+    
     <script>
         // --- BASE DE DADOS SIMULADA ---
         const initialProducts = {
@@ -428,5 +386,48 @@
         });
 
     </script>
+</head>
+<body>
+
+    <div class="os-container">
+        <div id="register-screen" class="screen" style="display: flex;">
+            <div class="product-area">
+                <div class="image-display">
+                    <img id="product-image" src="" alt="Imagem do Produto" style="display: none;">
+                    <span id="image-placeholder">Nenhum Produto</span>
+                </div>
+                <div class="price-display">
+                    <span class="price-label">Preço Unitário:</span>
+                    <span id="current-price">R$ 0,00</span>
+                </div>
+            </div>
+
+            <div class="product-list" id="product-list">
+                </div>
+
+            <div class="total-area">
+                <span class="price-label">TOTAL:</span>
+                <span id="total-value">R$ 0,00</span>
+            </div>
+            
+            <div class="scan-area">
+                <input type="text" id="product-code-input" placeholder="Digite o Código e tecle Enter">
+                <p class="action-message">Tecle **ALT** para Pagamento | Tecle **L** para Tabela de Produtos</p>
+            </div>
+        </div>
+
+        <div id="payment-screen" class="screen">
+            <h2>Modo de Pagamento</h2>
+            <div class="payment-options">
+                <button id="cash-button" onclick="selectPayment('cash')">DINHEIRO</button>
+                <button id="card-button" onclick="selectPayment('card')">CARTÃO / QR CODE</button>
+            </div>
+            <p class="action-message">Selecione o método de pagamento</p>
+        </div>
+
+        <div id="card-details-screen" class="screen" style="display: none;"></div>
+
+    </div>
+
 </body>
 </html>
