@@ -46,17 +46,15 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const total = urlParams.get('total');
-        const transactionID = 'TRX-' + Math.random().toString(36).substring(2, 9); 
+        // USANDO CHAVE UNIVERSAL (sem transactionID)
+        const GLOBAL_KEY = 'paymentStatus_GLOBAL'; 
 
         document.getElementById('total-text').textContent = `Valor: R$ ${parseFloat(total).toFixed(2).replace('.', ',')}`;
 
-        // GARANTIA DE HTTPS E HOST ROOT para máxima compatibilidade no Render
-        const paymentUrl = `https://${window.location.host}/mobile_payment.html?total=${total}&id=${transactionID}`;
-        
-        // Salva o ID da transação no PC usando sessionStorage
-        sessionStorage.setItem('activeTransactionID', transactionID);
+        // Monta a URL (agora sem o 'id' para simplificar o código do celular)
+        const paymentUrl = `https://${window.location.host}/mobile_payment.html?total=${total}`;
 
-        // Gera o QR Code
+        // Gere o QR Code
         new QRCode(document.getElementById("qrcode"), {
             text: paymentUrl,
             width: 256,
@@ -67,28 +65,24 @@
         });
 
         function cancelPayment() {
-            sessionStorage.removeItem('activeTransactionID'); 
             window.location.href = 'index.html'; 
         }
 
         // Função de monitoramento
         function checkPaymentStatus() {
-            const activeID = sessionStorage.getItem('activeTransactionID');
-            // CHAVE EXPLICITA que o celular deve escrever
-            const storageKey = 'paymentStatus_' + activeID; 
-            const statusJSON = sessionStorage.getItem(storageKey);
+            // O PC monitora a chave fixa
+            const statusJSON = localStorage.getItem(GLOBAL_KEY);
 
             if (statusJSON) {
                 const statusData = JSON.parse(statusJSON);
                 
-                // Limpa as chaves para evitar duplicação
-                sessionStorage.removeItem(storageKey);
-                sessionStorage.removeItem('activeTransactionID'); 
+                // Limpa a chave após ler
+                localStorage.removeItem(GLOBAL_KEY); 
                 clearInterval(checkInterval); 
                 
                 if (statusData.status === 'success') {
                     alert('Pagamento APROVADO! Finalizando transação.');
-                    window.location.href = 'index.html?reset=true'; // Redireciona para resetar
+                    window.location.href = 'index.html?reset=true'; 
                 } else if (statusData.status === 'failed') {
                     alert('Pagamento RECUSADO. Tente novamente.');
                     window.location.href = 'index.html'; 

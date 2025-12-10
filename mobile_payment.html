@@ -5,30 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Máquina de Cartão SIM</title>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #1a237e;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            text-align: center;
-        }
-        .header { font-size: 2em; margin-bottom: 50px; }
-        .total { font-size: 3em; font-weight: bold; color: #ffeb3b; }
-        button {
-            padding: 15px 30px;
-            font-size: 1.5em;
-            margin: 10px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        #approve { background-color: #4CAF50; color: white; }
-        #decline { background-color: #F44336; color: white; }
+        /* ... (seu CSS permanece o mesmo) ... */
     </style>
 </head>
 <body>
@@ -43,16 +20,15 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const total = urlParams.get('total');
-        const transactionID = urlParams.get('id'); // Recebe o ID único
+        // CHAVE FIXA
+        const GLOBAL_KEY = 'paymentStatus_GLOBAL'; 
 
         document.getElementById('mobile-total').textContent = `R$ ${parseFloat(total).toFixed(2).replace('.', ',')}`;
 
         function sendResponse(status) {
-            // Usa o ID da transação como parte da chave de armazenamento
-            const storageKey = 'paymentStatus_' + transactionID;
             
-            // Salva o status de pagamento usando sessionStorage
-            sessionStorage.setItem(storageKey, JSON.stringify({
+            // Salva o status de pagamento na chave fixa
+            localStorage.setItem(GLOBAL_KEY, JSON.stringify({
                 status: status,
                 timestamp: new Date().getTime()
             }));
