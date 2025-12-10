@@ -5,7 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Máquina de Cartão SIM</title>
     <style>
-        /* ... (seu CSS permanece o mesmo) ... */
+        /* CORREÇÃO DO LAYOUT MOBILE */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1a237e; /* Fundo azul escuro */
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center;    
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header { 
+            font-size: 1.8rem; 
+            margin-bottom: 30px; 
+        }
+        
+        .total { 
+            font-size: 4rem; 
+            font-weight: bold; 
+            color: #ffeb3b; 
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+        }
+
+        button {
+            width: 80%; 
+            max-width: 300px;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #approve { 
+            background-color: #4CAF50; 
+            color: white; 
+        }
+        #decline { 
+            background-color: #F44336; 
+            color: white; 
+        }
     </style>
 </head>
 <body>
@@ -20,21 +76,36 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const total = urlParams.get('total');
-        // CHAVE FIXA
-        const GLOBAL_KEY = 'paymentStatus_GLOBAL'; 
+        const transactionID = urlParams.get('id');
 
         document.getElementById('mobile-total').textContent = `R$ ${parseFloat(total).toFixed(2).replace('.', ',')}`;
 
         function sendResponse(status) {
-            
-            // Salva o status de pagamento na chave fixa
-            localStorage.setItem(GLOBAL_KEY, JSON.stringify({
-                status: status,
-                timestamp: new Date().getTime()
-            }));
-            
-            alert(`Pagamento ${status.toUpperCase()}! Fechando terminal.`);
-            window.close();
+            // Configuração do WebSocket
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${window.location.host}`;
+            const ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                // Envia o status da transação para o servidor
+                ws.send(JSON.stringify({
+                    type: 'PAYMENT_RESPONSE',
+                    transactionID: transactionID,
+                    status: status
+                }));
+                
+                // Fecha a conexão logo após o envio
+                ws.close(); 
+                
+                alert(`Pagamento ${status.toUpperCase()}! Fechando terminal.`);
+                window.close();
+            };
+
+            ws.onerror = (error) => {
+                console.error("Erro na conexão WebSocket:", error);
+                alert("Erro ao enviar resposta. Verifique a conexão.");
+                window.close();
+            };
         }
     </script>
 </body>

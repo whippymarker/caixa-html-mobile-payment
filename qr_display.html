@@ -46,52 +46,65 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const total = urlParams.get('total');
-        // USANDO CHAVE UNIVERSAL (sem transactionID)
-        const GLOBAL_KEY = 'paymentStatus_GLOBAL'; 
+        const transactionID = 'TRX-' + Math.random().toString(36).substring(2, 9); 
 
         document.getElementById('total-text').textContent = `Valor: R$ ${parseFloat(total).toFixed(2).replace('.', ',')}`;
 
-        // Monta a URL (agora sem o 'id' para simplificar o código do celular)
-        const paymentUrl = `https://${window.location.host}/mobile_payment.html?total=${total}`;
+        // Configuração do WebSocket (usa wss:// no Render)
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}`;
+        const ws = new WebSocket(wsUrl);
 
-        // Gere o QR Code
-        new QRCode(document.getElementById("qrcode"), {
-            text: paymentUrl,
-            width: 256,
-            height: 256,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
-        });
+        // URL que o QR Code irá conter
+        const paymentUrl = `${window.location.protocol}//${window.location.host}/mobile_payment.html?total=${total}&id=${transactionID}`;
+        
+        // Dispara a conexão e a criação do QR Code
+        ws.onopen = () => {
+            // Envia o ID da transação para o servidor para que ele saiba qual PC monitorar
+            ws.send(JSON.stringify({
+                type: 'START_TRANSACTION',
+                transactionID: transactionID
+            }));
 
-        function cancelPayment() {
-            window.location.href = 'index.html'; 
-        }
+            // Cria o QR Code após a conexão WS ser estabelecida
+            new QRCode(document.getElementById("qrcode"), {
+                text: paymentUrl,
+                width: 256,
+                height: 256,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        };
 
-        // Função de monitoramento
-        function checkPaymentStatus() {
-            // O PC monitora a chave fixa
-            const statusJSON = localStorage.getItem(GLOBAL_KEY);
-
-            if (statusJSON) {
-                const statusData = JSON.parse(statusJSON);
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'PAYMENT_STATUS' && data.transactionID === transactionID) {
+                // Recebe o status de volta do servidor
+                ws.close(); 
                 
-                // Limpa a chave após ler
-                localStorage.removeItem(GLOBAL_KEY); 
-                clearInterval(checkInterval); 
-                
-                if (statusData.status === 'success') {
+                if (data.status === 'success') {
                     alert('Pagamento APROVADO! Finalizando transação.');
                     window.location.href = 'index.html?reset=true'; 
-                } else if (statusData.status === 'failed') {
+                } else if (data.status === 'failed') {
                     alert('Pagamento RECUSADO. Tente novamente.');
                     window.location.href = 'index.html'; 
                 }
             }
-        }
+        };
 
-        // Monitora a cada 4 segundos
-        const checkInterval = setInterval(checkPaymentStatus, 4000); 
+        ws.onerror = (error) => {
+            console.error("Erro no WebSocket:", error);
+            alert("Erro de conexão com o servidor. Tente novamente.");
+        };
+
+        function cancelPayment() {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.close(); // Fecha a conexão
+            }
+            window.location.href = 'index.html'; 
+        }
     </script>
 </body>
 </html>
