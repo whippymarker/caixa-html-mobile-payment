@@ -3,108 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Processando Pagamento</title>
-    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+    <title>Pagamento Cartão/QR Code</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #34495e;
+            background-color: #2c3e50;
             color: #ecf0f1;
+            margin: 0;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
+        }
+
+        .qr-container {
+            width: 450px;
+            padding: 30px;
+            background-color: #34495e;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             text-align: center;
         }
-        #qrcode {
-            margin: 20px 0;
-            padding: 20px;
-            background-color: white;
-            border-radius: 10px;
+
+        h2 {
+            color: #3498db;
+            margin-bottom: 20px;
         }
-        h1 { color: #f1c40f; }
-        p { font-size: 1.2em; }
-        .cancel-button {
+
+        #total-amount {
+            font-size: 36px;
+            font-weight: bold;
+            color: #f1c40f;
+            margin-bottom: 30px;
+        }
+
+        .qr-code {
+            width: 250px;
+            height: 250px;
+            background-color: #fff;
+            margin: 0 auto 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 5px;
+            color: #333;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        button {
             padding: 10px 20px;
-            background-color: #e74c3c;
-            color: white;
+            font-size: 18px;
+            cursor: pointer;
             border: none;
             border-radius: 5px;
-            cursor: pointer;
-            margin-top: 20px;
+            background-color: #2ecc71;
+            color: #fff;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #27ae60;
         }
     </style>
 </head>
 <body>
-    <h1>Aguardando Pagamento...</h1>
-    <p id="total-text">Valor: R$ 0,00</p>
-    <div id="qrcode"></div>
-    <p>Use seu celular para escanear.</p>
-    <button class="cancel-button" onclick="cancelPayment()">Cancelar</button>
+    <div class="qr-container">
+        <h2>Aguardando Pagamento</h2>
+        <p>Total a ser pago:</p>
+        <p id="total-amount">R$ 0,00</p>
+        
+        <div class="qr-code">
+            <span>[Simulação de QR Code]</span>
+        </div>
+        
+        <p>Aguarde a confirmação do terminal...</p>
+
+        <button onclick="simulateSuccess()">Simular Pagamento Concluído</button>
+        <button onclick="window.history.back()">Voltar</button>
+    </div>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const total = urlParams.get('total');
-        const transactionID = 'TRX-' + Math.random().toString(36).substring(2, 9); 
+        const totalAmountDisplay = document.getElementById('total-amount');
+        let totalValue = 0;
 
-        document.getElementById('total-text').textContent = `Valor: R$ ${parseFloat(total).toFixed(2).replace('.', ',')}`;
+        const formatCurrency = (value) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
-        // Configuração do WebSocket (usa wss:// no Render)
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${wsProtocol}//${window.location.host}`;
-        const ws = new WebSocket(wsUrl);
-
-        // URL que o QR Code irá conter
-        const paymentUrl = `${window.location.protocol}//${window.location.host}/mobile_payment.html?total=${total}&id=${transactionID}`;
-        
-        // Dispara a conexão e a criação do QR Code
-        ws.onopen = () => {
-            // Envia o ID da transação para o servidor para que ele saiba qual PC monitorar
-            ws.send(JSON.stringify({
-                type: 'START_TRANSACTION',
-                transactionID: transactionID
-            }));
-
-            // Cria o QR Code após a conexão WS ser estabelecida
-            new QRCode(document.getElementById("qrcode"), {
-                text: paymentUrl,
-                width: 256,
-                height: 256,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
-        };
-
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
+        function loadTotal() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const total = urlParams.get('total');
             
-            if (data.type === 'PAYMENT_STATUS' && data.transactionID === transactionID) {
-                // Recebe o status de volta do servidor
-                ws.close(); 
-                
-                if (data.status === 'success') {
-                    alert('Pagamento APROVADO! Finalizando transação.');
-                    window.location.href = 'index.html?reset=true'; 
-                } else if (data.status === 'failed') {
-                    alert('Pagamento RECUSADO. Tente novamente.');
-                    window.location.href = 'index.html'; 
-                }
+            if (total) {
+                totalValue = parseFloat(total);
+                totalAmountDisplay.textContent = formatCurrency(totalValue);
             }
-        };
-
-        ws.onerror = (error) => {
-            console.error("Erro no WebSocket:", error);
-            alert("Erro de conexão com o servidor. Tente novamente.");
-        };
-
-        function cancelPayment() {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.close(); // Fecha a conexão
-            }
-            window.location.href = 'index.html'; 
         }
+
+        function simulateSuccess() {
+            alert("Pagamento Aprovado!");
+            
+            // Redireciona para o index, ativando a CORREÇÃO do bug
+            window.location.href = `index.html?reset=true`; 
+        }
+
+        document.addEventListener('DOMContentLoaded', loadTotal);
     </script>
 </body>
 </html>

@@ -255,16 +255,18 @@
         const formatCurrency = (value) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
         function updateScreen() {
-            registerScreen.style.display = 'none';
+            registerScreen.style.display = 'flex'; // Exibe a tela de registro por padrão
             paymentScreen.style.display = 'none';
 
-            if (currentState === 'register') {
-                registerScreen.style.display = 'flex';
-                // Garante o foco no campo de código
-                codeInput.focus(); 
-            } else if (currentState === 'payment') {
+            if (currentState === 'payment') {
+                registerScreen.style.display = 'none';
                 paymentScreen.style.display = 'flex';
             } 
+            
+            // Garante o foco sempre que a tela de registro estiver ativa
+            if (currentState === 'register') {
+                codeInput.focus();
+            }
         }
 
         function renderItemsList() {
@@ -329,18 +331,18 @@
             updateScreen();
         }
 
-       // FUNÇÃO DE PAGAMENTO (REDIRECIONAMENTO PARA TROCO / CARTÃO)
+       // FUNÇÃO DE PAGAMENTO (REDIRECIONAMENTO)
         window.selectPayment = function(method) {
             if (currentTotal <= 0) {
                  alert('Nenhum valor para pagar.');
                  return;
             }
            if (method === 'cash') {
-                // Redireciona para a nova tela de cálculo de troco
+                // Redireciona para a tela de cálculo de troco
                 const total = currentTotal.toFixed(2);
                 window.location.href = `cash_payment.html?total=${total}`;
             } else if (method === 'card') {
-                // REDIRECIONAMENTO PARA QR CODE / WEBSOCKETS
+                // REDIRECIONAMENTO PARA QR CODE
                 const total = currentTotal.toFixed(2);
                 window.location.href = `qr_display.html?total=${total}`;
             }
@@ -351,23 +353,19 @@
             currentTotal = 0.00;
             itemsList = [];
             
-            // Limpa o sessionStorage E localStorage
             sessionStorage.clear();
             localStorage.removeItem('savedTotal');
             localStorage.removeItem('savedItems');
             
-            // Volta o estado lógico e visual para o registro
             currentState = 'register'; 
             updateScreen();           
             
-            // Zera os displays visuais
             currentPriceDisplay.textContent = formatCurrency(0.00);
             productImage.style.display = 'none';
             imagePlaceholder.style.display = 'block';
 
             renderItemsList();
             
-            // Garante o foco após o reset
             codeInput.focus(); 
         }
 
@@ -375,24 +373,20 @@
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             
-            // Verifica se veio de uma tela de pagamento com status de reset (CORREÇÃO DO BUG DE URL)
+            // Verifica se veio de uma tela de pagamento com status de reset (CORREÇÃO FINAL DO BUG)
             if (urlParams.get('reset') === 'true') {
+                // 1. Executa o reset lógico da transação.
                 resetTransaction();
                 
-                // CORREÇÃO FINAL: Usa setTimeout para garantir que a manipulação da URL e o foco
-                // ocorram após o navegador terminar de processar o redirecionamento.
-                setTimeout(() => {
-                    // 1. Remove o parâmetro 'reset=true' e o '/index.html' da URL
-                    window.history.replaceState(null, null, '/');
-                    
-                    // 2. Garante o foco novamente
-                    codeInput.focus();
-                }, 50); // 50ms é geralmente suficiente para estabilizar
+                // 2. FORÇA O RECARREGAMENTO LIMPO para o URL base.
+                // Isso simula o F5 para estabilizar a página.
+                window.location.href = '/'; 
                 
+                // Paramos a execução aqui, pois a página será recarregada
                 return; 
             }
 
-            // Carrega o estado salvo ou reseta (fluxo normal)
+            // FLUXO NORMAL: Carrega o estado salvo ou reseta
             if (localStorage.getItem('savedTotal')) {
                 loadTransactionState(); 
             } else {
